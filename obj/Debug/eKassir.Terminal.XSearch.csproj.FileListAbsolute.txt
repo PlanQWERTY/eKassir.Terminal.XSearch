@@ -1,0 +1,20 @@
+C:\Terminal\Logic\eKassir.Terminal.XSearch.dll
+C:\Terminal\Logic\eKassir.Terminal.XSearch.pdb
+C:\Users\ProleyevNE\Dropbox\!ekassir\!search project\eKassir.Terminal.XSearch\eKassir.Terminal.XSearch\obj\Debug\eKassir.Terminal.XSearch.csprojResolveAssemblyReference.cache
+C:\Users\ProleyevNE\Dropbox\!ekassir\!search project\eKassir.Terminal.XSearch\eKassir.Terminal.XSearch\obj\Debug\eKassir.Terminal.XSearch.Properties.Resources.resources
+C:\Users\ProleyevNE\Dropbox\!ekassir\!search project\eKassir.Terminal.XSearch\eKassir.Terminal.XSearch\obj\Debug\eKassir.Terminal.XSearch.csproj.GenerateResource.Cache
+C:\Users\ProleyevNE\Dropbox\!ekassir\!search project\eKassir.Terminal.XSearch\eKassir.Terminal.XSearch\obj\Debug\eKassir.Terminal.XSearch.dll
+C:\Users\ProleyevNE\Dropbox\!ekassir\!search project\eKassir.Terminal.XSearch\eKassir.Terminal.XSearch\obj\Debug\eKassir.Terminal.XSearch.pdb
+D:\!Drop\Dropbox\!ekassir\!search project\eKassir.Terminal.XSearch\eKassir.Terminal.XSearch\obj\Debug\eKassir.Terminal.XSearch.Properties.Resources.resources
+D:\!Drop\Dropbox\!ekassir\!search project\eKassir.Terminal.XSearch\eKassir.Terminal.XSearch\obj\Debug\eKassir.Terminal.XSearch.csproj.GenerateResource.Cache
+D:\!Drop\Dropbox\!ekassir\!search project\eKassir.Terminal.XSearch\eKassir.Terminal.XSearch\obj\Debug\eKassir.Terminal.XSearch.dll
+D:\!Drop\Dropbox\!ekassir\!search project\eKassir.Terminal.XSearch\eKassir.Terminal.XSearch\obj\Debug\eKassir.Terminal.XSearch.pdb
+D:\Terminal\Logic\eKassir.Terminal.XSearch.dll
+D:\Terminal\Logic\eKassir.Terminal.XSearch.pdb
+D:\!Drop\Dropbox\!ekassir\!search\eKassir.Terminal.XSearch\!Output\eKassir.Terminal.XSearch.dll
+D:\!Drop\Dropbox\!ekassir\!search\eKassir.Terminal.XSearch\!Output\eKassir.Terminal.XSearch.pdb
+D:\!Drop\Dropbox\!ekassir\!search\eKassir.Terminal.XSearch\eKassir.Terminal.XSearch\obj\Debug\eKassir.Terminal.XSearch.Properties.Resources.resources
+D:\!Drop\Dropbox\!ekassir\!search\eKassir.Terminal.XSearch\eKassir.Terminal.XSearch\obj\Debug\eKassir.Terminal.XSearch.csproj.GenerateResource.Cache
+D:\!Drop\Dropbox\!ekassir\!search\eKassir.Terminal.XSearch\eKassir.Terminal.XSearch\obj\Debug\eKassir.Terminal.XSearch.dll
+D:\!Drop\Dropbox\!ekassir\!search\eKassir.Terminal.XSearch\eKassir.Terminal.XSearch\obj\Debug\eKassir.Terminal.XSearch.pdb
+D:\!Drop\Dropbox\!ekassir\!search\eKassir.Terminal.XSearch\eKassir.Terminal.XSearch\obj\Debug\eKassir.Terminal.XSearch.csprojResolveAssemblyReference.cache

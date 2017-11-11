@@ -1,0 +1,566 @@
+﻿		//к этому выражению добавить WHERE IN который вычисляется после разбора сеттинга, т.е. какие услуги запрашивать
+        //string queryServices = "SELECT id_service, alias, name_service, logo, version FROM service WHERE alias IN";        
+
+        //ВНИМАНИЕ!!!! searchTags (идет в searchField) - именно так должен называться атрибут который заводится в PS для поиска по ключевым словам
+        //searchField - поле в базе SQL которое совмещает в себе название услуги и ключевые слова по которым ищем
+
+        //string GetSqlqueryServiceExtAlt(string searchField, string IN)
+        //{
+        //    String ret = 
+        //        "IF EXISTS (" +
+        //        " (SELECT TOP(1) s.id_service, s.alias, s.name_service, s.logo, version," +
+        //        "s.name_service searchTags FROM service s " +
+        //        "WHERE s.alias IN (" + IN + ") " +
+        //        "UNION " +
+        //        "SELECT s.id_service, s.alias, s.name_service, s.logo, version," +
+        //        " 	   s.name_service +'; '+ ext._value searchTags FROM service s " +
+        //        "JOIN extension_objects ext ON s.id_service = ext.idd_object " +
+        //        "WHERE s.alias IN (" + IN + ") AND ext._name IN ('" + searchField + "')) " +
+        //        "EXCEPT SELECT s.id_service, s.alias, s.name_service, s.logo, version," +
+        //        " 	   s.name_service searchTags FROM service s WHERE s.alias IN (" + IN + ")) " +
+        //        "BEGIN SELECT s.id_service, s.alias, s.name_service, s.logo, version," +
+        //        " 	   s.name_service +'; '+ ext._value searchTags FROM service s " +
+        //        "JOIN extension_objects ext ON s.id_service = ext.idd_object " +
+        //        "WHERE s.alias IN (" + IN + ") AND ext._name IN ('" + searchField + "') " +
+        //        "END " +
+        //        "ELSE " +
+        //        "BEGIN " +
+        //        "SELECT s.id_service, s.alias, s.name_service, s.logo, version," +
+        //        " 	   s.name_service searchTags FROM service s WHERE s.alias IN (" + IN + ") " +
+        //        "END";
+        //    return ret;
+        //}
+
+        //string GetSqlqueryServiceExt(string searchField, string IN)
+        //{
+        //    String ret =
+        //        "IF EXISTS (SELECT TOP(1) _value FROM extension_objects WHERE _name IN ('" + searchField + "')) " +
+        //        "BEGIN " +
+        //        "SELECT s.id_service, s.alias, s.name_service, s.logo, version, " +
+        //        "s.name_service +'; '+ ext._value searchTags FROM service s " +
+        //        "JOIN extension_objects ext ON s.id_service = ext.idd_object " +
+        //        "WHERE ext._name IN ('" + searchField + "') AND s.alias IN (" + IN + ") " +
+        //        "END " +
+        //        "ELSE " +
+        //        "BEGIN " +
+        //        "SELECT id_service, alias, name_service, logo, version, name_service as searchTags FROM service " +
+        //        "WHERE alias IN (" + IN + ") " +
+        //        "END";
+        //    return ret;
+        //}
+
+
+		//public override string Method(string jsonString)
+        //{
+
+		//string result = string.Empty;
+            
+            //if (jsonString.Contains("xsearch"))
+            //{
+            //    Logger("Calling xsearch method");
+                
+            //    JavaScriptSerializer ser = new JavaScriptSerializer();
+            
+            //    //string[] searchString = ser.Deserialize<string[]>(jsonString);
+
+            //    try
+            //    {
+            //        //десериализуем json с информацией о том, что искать
+            //        Dictionary<string, string> searchString = ser.Deserialize<Dictionary<string, string>>(jsonString);
+                
+
+            //    //byte[] byteArray = Encoding.Unicode.GetBytes(jsonString);
+            //    //MemoryStream stream = new MemoryStream(byteArray);
+            //    //DataContractJsonSerializer jsonSerializer = new DataContractJsonSerializer(typeof(XSearchJSONinit));
+            //    //XSearchJSONinit objResponse = (XSearchJSONinit)jsonSerializer.ReadObject(stream);
+
+            //    //инстанс поискового движка
+            //    _xInstance = SearchEngine.XSearch.GetInstance;                
+
+            //    //убираем лишние знаки от JSON-а
+            //    char[] charsToTrim = { '"', ' ', '\'' };
+            //    string query = searchString["params"].Trim(charsToTrim);
+
+            //    //делегат для асинхронного вызова
+            //    AsyncSearch asearch = new AsyncSearch(_xInstance.Search);
+
+            //    //IAsyncResult res = asearch.BeginInvoke(searchString[1], "name_service", null, null);
+            //    IAsyncResult res = asearch.BeginInvoke(query, "name_service", null, null);                    
+
+            //    res.AsyncWaitHandle.WaitOne();                
+
+            //    // Call EndInvoke to retrieve the results.
+            //    List<XSearchObjJSON> searchResult = asearch.EndInvoke(res);
+
+            //    // Close the wait handle.
+            //    res.AsyncWaitHandle.Close();
+
+            //    //сериализуем в json
+            //    result = ser.Serialize(searchResult);
+
+            //    }
+            //    catch (MissingMethodException)
+            //    {
+            //       String message = "Введены неверные условия поиска";
+            //       result = ser.Serialize(message);
+            //       Logger(message + "\n" + jsonString);
+            //    }
+            //}            
+            //return result;
+			//}
+
+			//*************парсим setting.xml для поиска имен сценариев ассоциированных услугам*****************
+        public List<XSearchObj> ParseSetting(string path)
+        {            
+            //либо создаем коллекцию для накопления информации по алиасам сценариев
+            List<XSearchObj> scenAliasList = new List<XSearchObj>();
+
+            using (XmlReader xml = XmlReader.Create(path))
+            {
+                while (xml.Read())
+                {
+                    switch (xml.NodeType)
+                    {
+                        case (XmlNodeType.Element):
+
+                            //нашли элемент step и в нем атрибут MainMenu
+                            if (xml.Name == "step" && xml.GetAttribute("name") == "MainMenu")
+                            {
+                                XmlReader mainMenuNode = xml.ReadSubtree();                                
+
+                                while (mainMenuNode.Read())
+                                {
+                                    // нашли элемент menuitem и избавляемся от оболочек в меню с type="1", которые скрывают реальные услуги
+                                    if (mainMenuNode.Name == "menuitem" && xml.HasAttributes && xml.GetAttribute("type") == "0")
+                                    {                                            
+                                            string scen_alias = null, service_alias = null;
+                                            scen_alias = xml.GetAttribute("alias");
+                                            service_alias = xml.GetAttribute("service_alias");
+
+                                            XSearchObj fromMenuitem = new XSearchObj();
+
+                                            if (scen_alias != null && service_alias == null)
+                                            {
+                                                fromMenuitem.scen_alias = scen_alias.ToCharArray();
+                                                //так как service_alias пуст, добавим в service_alias псевдоним сценария
+                                                fromMenuitem.alias = scen_alias.ToCharArray();
+                                                //расскоментить чтобы посмотреть вывод парсинга
+                                                //Console.SetOut(writer);
+                                                //Console.WriteLine("menuItem SERVICE_NAME: {0}", new string (fromMenuitem.scen_alias));
+                                                //Console.SetOut(oldOut);
+                                                //добавление в коллекцию LuceneIndex либо в коллекцию
+                                                //UpdateAlias(ref ramIndex, ref fromMenuitem);
+                                                scenAliasList.Add(fromMenuitem);
+                                            }
+                                            else if (scen_alias != null && service_alias != null)
+                                            {
+                                                fromMenuitem.alias = service_alias.ToCharArray();
+                                                fromMenuitem.scen_alias = scen_alias.ToCharArray();
+                                                //расскоментить чтобы посмотреть вывод парсинга
+                                                //Console.SetOut(writer);
+                                                //Console.WriteLine("menuItem SERVICE_NAME: {0}, SCENARIO_ALIAS: {1} ", new string (fromMenuitem.alias), new string (fromMenuitem.scen_alias));
+                                                //Console.SetOut(oldOut);
+                                                //добавление в коллекцию LuceneIndex либо в коллекцию
+                                                //UpdateAlias(ref ramIndex, ref fromMenuitem);
+                                                scenAliasList.Add(fromMenuitem);
+                                            }                                                                                                                                 
+                                    }
+                                }
+
+                                mainMenuNode.Close();
+                            }
+                            
+
+                            // нашли элемент scenario
+                            if (xml.Name == "scenario" && xml.HasAttributes)
+                            {
+                                string scen_alias = null;
+                                scen_alias = xml.GetAttribute("alias");
+
+                                if (scen_alias.Length != 0)
+                                {
+                                        XSearchObj fromScenario = new XSearchObj();
+                                        fromScenario.scen_alias = scen_alias.ToCharArray();
+                                        //так как service_alias пуст, добавим в service_alias псевдоним сценария
+                                        fromScenario.alias = scen_alias.ToCharArray();
+                                        //расскоментить чтобы посмотреть вывод парсинга
+                                        //Console.SetOut(writer);
+                                        //Console.WriteLine("scenario SCENARIO_ALIAS: {0} ", new string (fromScenario.scen_alias));
+                                        //Console.SetOut(oldOut);
+                                        //добавление в коллекцию LuceneIndex либо в коллекцию
+                                        //UpdateAlias(ref ramIndex, ref fromScenario);
+                                        scenAliasList.Add(fromScenario);
+                                    }   
+                            }
+
+                            // нашли элемент scenarioIntricate
+                            if (xml.Name == "scenarioIntricate" && xml.HasAttributes)
+                            {
+                                    string serv_alias = null, scen_alias = null;
+                                    serv_alias = xml.GetAttribute("name");
+                                    scen_alias = xml.GetAttribute("alias");
+
+                                    XSearchObj fromScenIntricate = new XSearchObj();
+
+                                    if (scen_alias == null && serv_alias != null)
+                                    {
+                                        fromScenIntricate.alias = serv_alias.ToCharArray();
+                                        //так как service_alias пуст, добавим в service_alias псевдоним сценария
+                                        fromScenIntricate.scen_alias = serv_alias.ToCharArray();
+                                        //расскоментить чтобы посмотреть вывод парсинга
+                                        //Console.SetOut(writer);
+                                        //Console.WriteLine("scenarioIntricate SERVICE_NAME: {0}", new string (fromScenIntricate.alias));
+                                        //Console.SetOut(oldOut);
+                                        //добавление в коллекцию LuceneIndex либо в коллекцию
+                                        //UpdateAlias(ref ramIndex, ref fromScenIntricate);
+                                        scenAliasList.Add(fromScenIntricate);
+                                    }
+                                    else if (scen_alias != null && serv_alias != null)
+                                    {
+                                        fromScenIntricate.alias = serv_alias.ToCharArray();
+                                        fromScenIntricate.scen_alias = scen_alias.ToCharArray();
+                                        //расскоментить чтобы посмотреть вывод парсинга
+                                        //Console.SetOut(writer);
+                                        //Console.WriteLine("scenarioIntricate SERVICE_NAME: {0}, SCENARIO_ALIAS: {1} ", new string (fromScenIntricate.alias), new string (fromScenIntricate.scen_alias));
+                                        //Console.SetOut(oldOut);
+                                        //добавление в коллекцию LuceneIndex либо в коллекцию
+                                        //UpdateAlias(ref ramIndex, ref fromScenIntricate);
+                                        scenAliasList.Add(fromScenIntricate);
+                                    }                                                                    
+                            }
+                            //нужно бросить исключение что ничего не найдено                          
+                            break;
+                    }
+                }
+            }
+
+            //расскоментить чтобы посмотреть вывод парсинга
+            //writer.Close();
+            //ostrm.Close();
+
+            //если используем индексы для хранения результатов парсинга, то раскомментировать
+            //Optimize(ref ramIndex);
+            //Dispose(ref ramIndex);            
+
+            //возвращаем все пары "псевдоним услуги - псевдоним сценария" из индекса (если используем индексы для хранения результатов парсинга, то раскомментировать)
+            //IEnumerable<XSearchObj> settingList = GetAllScenarioServicePairs(ref _memoryPathServAliases);
+
+            //объединяем индекс и сеттинг
+            //MergeWithScenAliasList(scenAliasList);
+
+            //формируем строку для выражения WHERE IN (!!!сейчас не используется из-за возможного обилия услуг и длинного запроса)
+            //WhereIn = GetIdServicefromSetting(ref scenAliasList);
+
+            return scenAliasList;
+        }
+
+		//выражение для запроса на базу WHERE IN (из-за возможного большого количества услуг, сейчас не используется)
+        //public string WhereIn { get; private set;}
+
+		//формируем строку для выражения WHERE IN (для запроса услуг из базы)
+        string GetIdServicefromSetting(ref List<XSearchObj> fromSetting)
+        {
+            StringBuilder tempQuery = new StringBuilder();
+            //tempQuery.Append('(');
+
+            for (int i = 0; i < fromSetting.Count; i++)
+            {
+                if ((i + 1) < fromSetting.Count)
+                    tempQuery.Append('\'').Append(fromSetting[i].alias).Append('\'').Append(',').Append(' ');
+                else
+                    tempQuery.Append('\'').Append(fromSetting[i].alias).Append('\'');
+
+            }
+
+            string whereIn = tempQuery.ToString();//.Append(')').ToString();
+
+            if (whereIn.Trim().Equals(String.Empty))
+                whereIn = "''";
+            
+            return whereIn;
+        }
+
+		        //возвращаем все пары "псевдоним услуги - псевдоним сценария" из индекса
+        List<XSearchObj> GetAllScenarioServicePairs(ref Directory ramPath)
+        {
+            IndexReader indexReader = IndexReader.Open(ramPath, true);
+
+            int elementsCount = indexReader.MaxDoc;
+            List<XSearchObj> allDocs = new List<XSearchObj>(elementsCount);                         
+
+            for (int i = 0; i < elementsCount; i++)
+            {
+                if (indexReader.IsDeleted(i))
+                    continue;
+
+                Document doc = indexReader.Document(i);
+                XSearchObj temp = new XSearchObj();
+                temp.alias = doc.Get("alias").ToCharArray();
+                temp.scen_alias = doc.Get("scen_alias").ToCharArray();
+                allDocs.Add(temp);
+            }
+            indexReader.Dispose();
+            return allDocs;
+        }
+
+		        /*Для Merge*/
+        //void AddDocuments(ref Directory path, ref List<Document> docs, bool delAll, bool toMemory)
+        //{            
+        //    IndexWriter writer = Initialize(ref path, delAll, toMemory);
+            
+        //    try
+        //    {
+        //        foreach (Document doc in docs)
+        //            writer.AddDocument(doc);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        if (ex is OutOfMemoryException || ex is NullReferenceException)
+        //        {
+        //            //закрываем writer                    
+        //            writer.Dispose();
+        //            //Console.WriteLine("Error adding document! \n" + ex.Message);
+        //            return;
+        //        }
+        //        throw new Exception("Error adding document! \n" + ex.Message);
+        //    }
+        //    writer.Dispose();
+        //}
+
+
+		        //добавляем только алиасы из парсинга для последующего сравнения на дубли
+        void UpdateAlias(ref IndexWriter writer, ref XSearchObj service)
+        {
+            lock (searchLock)
+            {
+                Document doc = new Document();
+
+                //псевдоним услуги (индексируется как id)
+                doc.Add(new Field("alias", new string(service.alias), Field.Store.YES, Field.Index.NOT_ANALYZED));
+                //имя сценария
+                doc.Add(new Field("scen_alias", new string(service.scen_alias), Field.Store.YES, Field.Index.NO));
+
+                try
+                {
+                    writer.UpdateDocument(new Term("alias"), doc);
+                }
+                catch (Exception ex)
+                {
+                    if (ex is OutOfMemoryException || ex is NullReferenceException)
+                    {
+                        //закрываем writer                    
+                        writer.Dispose();
+                        //Console.WriteLine("Error adding document! \n" + ex.Message);
+                        return;
+                    }
+                    throw new Exception("Error adding document! \n" + ex.Message);
+                }
+            }
+        }
+
+		        //сливаем индексы из памяти в директорию
+        //(пока реализован довольно медленный вариант, поэтому сделал его private, нигде не использую, проще пересоздавать)
+        //void Merge() {
+
+        //    IndexWriter memWriter = Initialize(ref _memoryPath, true, true);
+        //    //IndexWriter catalogWriter = Initialize(ref catalogPath, false);
+
+        //    if (memWriter != null)// && catalogWriter != null)
+        //    {
+        //        memWriter.Dispose();
+        //        //catalogWriter.Dispose();
+        //    }
+            
+        //    //************!!! IndexReader открываем после writer.Dispose()***************************            
+        //    IndexReader memReader = IndexReader.Open(_memoryPath, true);
+        //    IndexWriter catalogWriter = Initialize(ref _catalogPath, false, false);
+
+        //    try
+        //    {
+        //        //TODO удаление только тех дублей которые младше по версии, приоритет на значения из memReader
+        //        //catalogWriter.DeleteAll();                
+        //        catalogWriter.AddIndexes(memReader);
+                
+        //        //Optimize(ref catalogWriter);         
+        //        Dispose(ref catalogWriter);
+        //        memReader.Dispose();
+
+        //        IndexReader indexReader = IndexReader.Open(_catalogPath, false); //false открыт на запись
+
+        //        int maxDoc = indexReader.MaxDoc;
+        //        List<Document> docs = new List<Document>(maxDoc);
+
+        //        for (int i = 0; i < maxDoc; i++)
+        //        {
+        //            if (indexReader.IsDeleted(i))
+        //                continue;
+
+        //            Document doc = indexReader.Document(i);
+        //            Term idService = new Term("id_service", doc.Get("id_service"));
+        //            TermEnum enumTerms = indexReader.Terms(idService);
+        //            int numDocs = enumTerms.DocFreq();
+        //            if (numDocs > 1)
+        //            {
+        //                docs.Add(doc); //добавляем для последующего занесения
+        //                indexReader.DeleteDocuments(idService); //удаляем дубли
+        //            }
+        //        }
+        //        indexReader.Dispose();                
+
+        //        //добавляем услуги которые удалили вместе с дублями
+        //        AddDocuments(ref _catalogPath, ref docs, false, false);
+
+        //        catalogWriter = Initialize(ref _catalogPath, false, false);                               
+
+        //        Optimize(ref catalogWriter);
+        //        Dispose(ref catalogWriter);                
+        //    }
+        //    catch (OutOfMemoryException ex) {
+        //        //Console.WriteLine("Can't add more elements " + ex.Message);
+        //        throw new Exception("Can't add more elements " + ex.Message);
+        //    }
+        //}
+
+        //считаем индекс "похожести" (пока нигде не используется, нужно при Merge и удалении дубликатов)
+        //double GetIdf(IndexReader reader, String field, String termName)
+        //{
+        //    double result = -1;
+        //    result = Math.Log((reader.NumDocs()/ ((double) reader.DocFreq((new Term(field, termName))))));
+        //    return result;
+        //}
+
+
+		        //возвращаем массив JSON-объектов как результат поиска
+        string getXSearchJSON(List<XSearchObjJSON> xsearchObjList) {
+
+            
+            MemoryStream stream1 = new MemoryStream();
+            DataContractJsonSerializer s = new DataContractJsonSerializer(typeof(XSearchObjJSON));
+
+            foreach (XSearchObjJSON temp in xsearchObjList) {
+                
+            s.WriteObject(stream1, temp);
+            }
+
+            stream1.Position = 0;
+            StreamReader sr = new StreamReader(stream1);
+            //Console.Write("JSON form of Person object: ");
+            //Console.WriteLine(sr.ReadToEnd());
+            return sr.ReadToEnd();
+        }
+
+		//ищем услугу в индексе. что ищем (queryString) и в каком поле (Field)
+        //TODO: переделать на поиск по множеству полей и выдачу нужных полей (передача SearchObject?)
+        public List<XSearchObjJSON> Search(string queryString)
+        {
+            lock (searchLock)
+            {
+                IndexReader reader = IndexReader.Open(_catalogPath, true); //ReadOnly = true для производительности
+                IndexSearcher searcher = null;
+
+                try
+                {
+                    //Создадим IndexSearcher
+                    searcher = new IndexSearcher(reader);
+
+                    // Строим Query объект                
+                    //****************************************************************************************
+                    // Внимание!!! добавляем "*" согласно синтаксу Lucene ищет вхождения по всему индексированномоу тексту
+                    //****************************************************************************************
+                    QueryParser parser = new QueryParser(Version.LUCENE_30, SearchField, simpleAnalyzer);
+                    Query query = parser.Parse(queryString + '*');
+                    //Term term = new Term(Field, queryString);
+                    //Query query = new PrefixQuery(term);
+
+                    // Search for the query
+                    TopScoreDocCollector collector = TopScoreDocCollector.Create(5 * hitsPerPage, false);
+                    searcher.Search(query, collector);
+
+                    ScoreDoc[] hits = collector.TopDocs().ScoreDocs;
+
+                    int hitCount = hits.Length;
+                    //Console.WriteLine(hitCount + " total matching documents");
+
+                    // Examine the Hits object to see if there were any matches
+
+                    //создаем сериализованную строку (отадем, если будем использовать сериализацию здесь а не в производной библиотеке)
+                    //string json = string.Empty;                
+
+                    //создаем список JSON объектов для сериализации
+                    List<XSearchObjJSON> xsearchObjList = new List<XSearchObjJSON>();
+
+                    if (hitCount == 0)
+                    {
+                        //Console.WriteLine("No matches were found for \"" + queryString + "\"");
+                        //xsearchObjList.Add(new XSearchObjJSON("empty", "empty", "empty", "empty", "empty"));
+                    }
+                    else
+                    {
+                        //Console.WriteLine("Hits for \"" + queryString + "\" were found in quotes by:");
+
+
+                        // Iterate over the Documents in the Hits object
+                        for (int i = 0; i < hitCount; i++)
+                        {
+                            ScoreDoc scoreDoc = hits[i];
+                            int docId = scoreDoc.Doc;
+                            float docScore = scoreDoc.Score;
+                            //Console.WriteLine("docId: " + docId + "\t" + "docScore: " + docScore);
+
+                            Document doc = searcher.Doc(docId);
+
+                            // Print the value that we stored in the "title" field. Note
+                            // that this Field was not indexed, but (unlike the
+                            // "contents" field) was stored verbatim and can be
+                            // retrieved.
+                            //Console.WriteLine("  " + (i + 1) + ". " + doc.Get("alias"));
+                            //Console.WriteLine("Service name: " + doc.Get("name_service"));
+
+                            //вытаскиваем все поля и создаем объект для сериализации
+                            string logo = (doc.Get("logo") == String.Empty || doc.Get("logo") == null) ? String.Empty : doc.Get("logo");
+                            XSearchObjJSON temp = new XSearchObjJSON(doc.Get("id_service"), doc.Get("alias"), doc.Get("scen_alias"), doc.Get("name_service"), logo);
+
+                            //добавляем объекты удачного поиска для сериализации
+                            xsearchObjList.Add(temp);
+
+                        }
+
+                        //json = new JavaScriptSerializer().Serialize(xsearchObjList);
+
+                        //альтернативный вариант сериализации (с ним можно обойтись .NET 3.5 Client)
+                        //string json = getXSearchJSON(xsearchObjList);
+
+                        //Console.WriteLine(json);                    
+                    }
+
+                    //удаляем Searcher и Reader;
+                    searcher.Dispose();
+                    reader.Dispose();
+
+                    //return json;
+                    return xsearchObjList;
+
+                }
+                catch (Exception ex)
+                {
+                    if (ex is ParseException || ex is IOException || ex is NullReferenceException)
+                    {
+                        //удаляем Searcher и Reader???
+                        if (searcher != null) searcher.Dispose();
+                        reader.Dispose();
+
+                        //сообщаем об ошибках наружу (bad way)
+                        List<XSearchObjJSON> xsearchObjList = new List<XSearchObjJSON>();
+                        //xsearchObjList.Add(new XSearchObjJSON("error", "error", "error", "error", "error"));
+
+                        //Console.WriteLine("Searching error! " + ex.Message);                 
+
+                        return xsearchObjList;
+
+                        //XSearchObjJSON error = new XSearchObjJSON("error", "error", "error", "error");
+                        //return new JavaScriptSerializer().Serialize(error);
+                    }
+                    throw;
+                }
+            }
+        }
